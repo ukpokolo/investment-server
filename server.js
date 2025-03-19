@@ -3,18 +3,32 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config({
-  path: path.resolve(__dirname, `.env.${process.env.NODE_ENV}`)
-});
-const walletController = require('./controllers/walletController');
+
+// Load default .env file first
+require('dotenv').config();
+
+// Then try to load environment-specific config
+if (process.env.NODE_ENV) {
+  require('dotenv').config({
+    path: path.resolve(__dirname, `.env.${process.env.NODE_ENV}`),
+    override: true
+  });
+} else {
+  console.log('NODE_ENV not set, using default .env file');
+}
+
+console.log('Using environment:', process.env.NODE_ENV);
+console.log('MongoDB URI exists:', !!process.env.MONGODB_URI);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Update CORS configuration for production
+// Configure CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*', // Replace with your frontend URL in production
-  credentials: true
+  origin: process.env.FRONTEND_URL || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -22,15 +36,22 @@ app.use(express.json());
 // Database connection with retry logic
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected');
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    // Retry connection after 5 seconds
+    // Make sure process.env.MONGODB_URI is defined
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('MONGODB_URI is not defined in environment variables');
+    }
+    
+    await mongoose.connect(uri);
+    console.log('MongoDB connected successfully');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    // Retry logic
     setTimeout(connectDB, 5000);
   }
 };
 
+// Connect to MongoDB
 connectDB();
 
 // Routes
@@ -45,9 +66,13 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Investment API is running',
-    version: '1.0.0'
+    version: '1.0.0',
+    environment: process.env.NODE_ENV
   });
 });
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -59,6 +84,13 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
 });

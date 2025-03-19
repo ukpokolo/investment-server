@@ -4,8 +4,10 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "NODE_ENV=production node server.js",
-    "dev": "NODE_ENV=development nodemon server.js",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "dev": "env-cmd -f .env.development react-scripts start",
+    "build:prod": "env-cmd -f .env.production react-scripts build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
