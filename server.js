@@ -25,8 +25,7 @@ const PORT = process.env.PORT || 5000;
 
 // Configure CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: process.env.FRONTEND_URL.replace(/\/$/, '') || '*', // Remove trailing slash if present  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'investment-token']
 }));
