@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Investment = require('../models/Investment');
+const Transaction = require('../models/Transaction'); // Add this line
 const walletController = require('../controllers/walletController');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
@@ -50,6 +51,29 @@ router.get('/investments', async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/total-investments
+// @desc    Calculate total investments amount
+// @access  Admin
+router.get('/total-investments', async (req, res) => {
+  try {
+    const totalInvestments = await Transaction.aggregate([
+      { $match: { type: 'INVESTMENT', status: 'APPROVED' } },
+      { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
+    ]);
+
+    res.json({
+      success: true,
+      totalAmount: totalInvestments[0]?.totalAmount || 0
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 // @route   DELETE /api/admin/users/:id
 // @desc    Delete a user
 // @access  Admin
@@ -86,5 +110,7 @@ router.delete('/users/:id', async (req, res) => {
 // Admin wallet routes
 router.post('/system-wallet', walletController.createSystemWallet);
 router.get('/system-wallets', walletController.getSystemWallets);
+router.put('/system-wallet/:walletId', walletController.updateSystemWallet);
+router.delete('/system-wallet/:walletId', walletController.deleteSystemWallet);
 
 module.exports = router;

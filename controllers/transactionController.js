@@ -2,6 +2,7 @@ const Transaction = require('../models/Transaction');
 const InvestmentPlan = require('../models/Investment');
 const Wallet = require('../models/Wallet');
 
+// Create a new investment
 exports.createInvestment = async (req, res) => {
   try {
     const { planId, amount, cryptoType } = req.body;
@@ -68,6 +69,7 @@ exports.createInvestment = async (req, res) => {
   }
 };
 
+// Request a withdrawal
 exports.requestWithdrawal = async (req, res) => {
   try {
     const { amount, walletId } = req.body;
@@ -109,6 +111,7 @@ exports.requestWithdrawal = async (req, res) => {
   }
 };
 
+// Get user transactions
 exports.getTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({ user: req.user.id })
@@ -126,4 +129,80 @@ exports.getTransactions = async (req, res) => {
       error: err.message
     });
   }
-}; 
+};
+
+// Admin approve payment
+exports.approvePayment = async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+
+    const transaction = await Transaction.findById(transactionId);
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    if (transaction.status !== 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        message: 'Transaction is not pending'
+      });
+    }
+
+    transaction.status = 'APPROVED';
+    await transaction.save();
+
+    res.json({
+      success: true,
+      transaction,
+      message: 'Payment approved successfully'
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error approving payment',
+      error: err.message
+    });
+  }
+};
+
+// Admin approve transaction
+exports.approveTransaction = async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+
+    const transaction = await Transaction.findById(transactionId);
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    if (transaction.status !== 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        message: 'Transaction is not pending'
+      });
+    }
+
+    transaction.status = 'APPROVED';
+    await transaction.save();
+
+    res.json({
+      success: true,
+      transaction,
+      message: 'Transaction approved successfully'
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error approving transaction',
+      error: err.message
+    });
+  }
+};

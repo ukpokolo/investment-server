@@ -12,8 +12,8 @@ const walletSchema = new mongoose.Schema({
   },
   cryptoType: {
     type: String,
-    required: true,
-    enum: ['BTC', 'ETH', 'USDT']
+    required: true
+    
   },
   address: {
     type: String,

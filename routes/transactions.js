@@ -9,4 +9,8 @@ router.post('/invest', transactionController.createInvestment);
 router.post('/withdraw', transactionController.requestWithdrawal);
 router.get('/', transactionController.getTransactions);
 
-module.exports = router; 
+// Admin routes
+router.put('/approve-payment/:transactionId', transactionController.approvePayment);
+router.put('/approve-transaction/:transactionId', transactionController.approveTransaction);
+
+module.exports = router;

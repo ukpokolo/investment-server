@@ -63,6 +63,91 @@ exports.getUserWallets = async (req, res) => {
   }
 };
 
+// Get wallet details
+exports.getWalletDetails = async (req, res) => {
+  try {
+    const { walletId } = req.params;
+    const wallet = await Wallet.findOne({ _id: walletId, user: req.user.id });
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: 'Wallet not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      wallet
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching wallet details',
+      error: err.message
+    });
+  }
+};
+
+// Update user wallet
+exports.updateUserWallet = async (req, res) => {
+  try {
+    const { walletId } = req.params;
+    const { name, cryptoType } = req.body;
+
+    const wallet = await Wallet.findOneAndUpdate(
+      { _id: walletId, user: req.user.id },
+      { name, cryptoType },
+      { new: true }
+    );
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: 'Wallet not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      wallet
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating wallet',
+      error: err.message
+    });
+  }
+};
+
+// Delete user wallet
+exports.deleteUserWallet = async (req, res) => {
+  try {
+    const { walletId } = req.params;
+
+    const wallet = await Wallet.findOneAndDelete({ _id: walletId, user: req.user.id });
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: 'Wallet not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Wallet deleted successfully'
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting wallet',
+      error: err.message
+    });
+  }
+};
+
 // Create system wallet (admin only)
 exports.createSystemWallet = async (req, res) => {
   try {
@@ -127,4 +212,63 @@ exports.getSystemWallets = async (req, res) => {
       error: err.message
     });
   }
-}; 
+};
+
+// Update system wallet (admin only)
+exports.updateSystemWallet = async (req, res) => {
+  try {
+    const { walletId } = req.params;
+    const { cryptoType, address } = req.body;
+
+    const wallet = await Wallet.findOneAndUpdate(
+      { _id: walletId, user: null },
+      { cryptoType, address },
+      { new: true }
+    );
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: 'System wallet not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      wallet
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating system wallet',
+      error: err.message
+    });
+  }
+};
+
+// Delete system wallet (admin only)
+exports.deleteSystemWallet = async (req, res) => {
+  try {
+    const { walletId } = req.params;
+
+    const wallet = await Wallet.findOneAndDelete({ _id: walletId, user: null });
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: 'System wallet not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'System wallet deleted successfully'
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting system wallet',
+      error: err.message
+    });
+  }
+};
