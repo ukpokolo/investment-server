@@ -131,6 +131,27 @@ exports.getTransactions = async (req, res) => {
   }
 };
 
+// Get all transactions (admin only)
+exports.getAllTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.find()
+      .populate('user', 'name email')
+      .populate('investmentPlan')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      transactions
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transactions',
+      error: err.message
+    });
+  }
+};
+
 // Admin approve payment
 exports.approvePayment = async (req, res) => {
   try {
