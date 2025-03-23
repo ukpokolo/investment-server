@@ -1,5 +1,8 @@
 const Wallet = require('../models/Wallet');
 const crypto = require('crypto');
+const Transaction = require('../models/Transaction');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // Generate a mock wallet address (in production, you'd integrate with actual crypto services)
 const generateWalletAddress = (cryptoType) => {
@@ -9,13 +12,13 @@ const generateWalletAddress = (cryptoType) => {
 exports.createWallet = async (req, res) => {
   try {
     const { name, cryptoType } = req.body;
-    
+
     // Check if wallet with same name exists for user
-    const existingWallet = await Wallet.findOne({ 
+    const existingWallet = await Wallet.findOne({
       user: req.user.id,
-      name 
+      name
     });
-    
+
     if (existingWallet) {
       return res.status(400).json({
         success: false,
@@ -24,7 +27,7 @@ exports.createWallet = async (req, res) => {
     }
 
     const walletAddress = generateWalletAddress(cryptoType);
-    
+
     const wallet = new Wallet({
       user: req.user.id,
       name,
@@ -162,11 +165,11 @@ exports.createSystemWallet = async (req, res) => {
     }
 
     // Check if system wallet already exists for this crypto type
-    const existingWallet = await Wallet.findOne({ 
+    const existingWallet = await Wallet.findOne({
       cryptoType,
-      user: null 
+      user: null
     });
-    
+
     if (existingWallet) {
       return res.status(400).json({
         success: false,
@@ -180,7 +183,7 @@ exports.createSystemWallet = async (req, res) => {
       cryptoType,
       address
     });
-    
+
     await systemWallet.save();
 
     res.status(201).json({
@@ -269,6 +272,55 @@ exports.deleteSystemWallet = async (req, res) => {
       success: false,
       message: 'Error deleting system wallet',
       error: err.message
+
+
     });
+  }
+};
+
+// Approve pending withdrawal (admin only)
+exports.approveWithdrawal = async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+
+    // Find the transaction
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ success: false, message: 'Transaction not found' });
+    }
+
+    // Ensure the transaction is a withdrawal and is pending
+    if (transaction.type !== 'WITHDRAWAL' || transaction.status !== 'PENDING') {
+      return res.status(400).json({ success: false, message: 'Invalid transaction' });
+    }
+
+    // Find the user
+    const user = await User.findById(transaction.user);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Deduct the amount from the user's dormant funds
+    user.dormantFunds = (user.dormantFunds || 0) - transaction.amount;
+    await user.save();
+
+    // Update the transaction status to approved
+    transaction.status = 'APPROVED';
+    await transaction.save();
+
+    // Create a notification for the user
+    const notification = new Notification({
+      title: 'Withdrawal Approved',
+      message: `Your withdrawal of ${transaction.amount} ${transaction.cryptoType} has been approved.`,
+      type: 'SUCCESS',
+      user: user._id,
+      link: `/transactions/${transaction._id}`
+    });
+
+    await notification.save();
+
+    res.status(200).json({ success: true, message: 'Withdrawal approved and dormant funds updated' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Error approving withdrawal', error: err.message });
   }
 };

@@ -5,8 +5,10 @@ const User = require('../models/User');
 const Investment = require('../models/Investment');
 const Transaction = require('../models/Transaction');
 const walletController = require('../controllers/walletController');
+const investmentController = require('../controllers/investmentController');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const Notification = require('../models/Notification');
 
 // Apply both auth and admin middleware to all routes except /system-wallets
 router.use(auth);
@@ -69,20 +71,20 @@ router.get('/total-investments', admin, async (req, res) => {
 router.delete('/users/:id', admin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     // Delete user's investments
     await Investment.deleteMany({ user: req.params.id });
-    
+
     // Delete user
     await user.remove();
-    
+
     res.json({
       success: true,
       message: 'User and associated investments removed'
@@ -96,10 +98,49 @@ router.delete('/users/:id', admin, async (req, res) => {
   }
 });
 
+// Admin notifications route
+router.get('/notifications', admin, async (req, res) => {
+  try {
+    const notifications = await Notification.find().sort({ createdAt: -1 });
+    const unreadCount = await Notification.countDocuments({ isRead: false });
+    res.json({
+      success: true,
+      count: notifications.length,
+      unreadCount,
+      notifications
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+router.post('/notifications/mark-as-read', admin, async (req, res) => {
+  try {
+    await Notification.updateMany({ isRead: false }, { isRead: true });
+    res.json({ success: true, message: 'All notifications marked as read' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 // Admin wallet routes
 router.post('/system-wallet', admin, walletController.createSystemWallet);
 router.put('/system-wallet/:walletId', admin, walletController.updateSystemWallet);
 router.delete('/system-wallet/:walletId', admin, walletController.deleteSystemWallet);
+
+// Approve pending investment
+router.put('/approve-investment/:transactionId', admin, investmentController.approveInvestment);
+
+// Approve pending withdrawal
+router.put('/approve-withdrawal/:transactionId', admin, walletController.approveWithdrawal);
 
 // Allow users to access this endpoint
 router.get('/system-wallets', walletController.getSystemWallets);

@@ -25,7 +25,8 @@ const PORT = process.env.PORT || 5000;
 
 // Configure CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL.replace(/\/$/, '') || '*', // Remove trailing slash if present  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: process.env.FRONTEND_URL.replace(/\/$/, '') || '*', // Remove trailing slash if present
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'investment-token']
 }));
@@ -40,7 +41,7 @@ const connectDB = async () => {
     if (!uri) {
       throw new Error('MONGODB_URI is not defined in environment variables');
     }
-    
+
     await mongoose.connect(uri);
     console.log('MongoDB connected successfully');
   } catch (error) {
@@ -59,6 +60,7 @@ app.use('/api/investments', require('./routes/investments'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/wallets', require('./routes/wallets'));
 app.use('/api/transactions', require('./routes/transactions'));
+app.use('/api/users', require('./routes/users'));
 
 // Basic route
 app.get('/', (req, res) => {
