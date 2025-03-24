@@ -19,4 +19,8 @@ router.post('/login', authController.login);
 // @access  Private
 router.get('/me', auth, authController.getCurrentUser);
 
+// Forgot password flow
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/verify-reset-code', authController.verifyResetCode);
+router.post('/reset-password', authController.resetPassword);
 module.exports = router;

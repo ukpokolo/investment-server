@@ -70,8 +70,10 @@ router.get('/total-investments', admin, async (req, res) => {
 
 router.delete('/users/:id', admin, async (req, res) => {
   try {
+    // Find the user by the ID provided in the URL
     const user = await User.findById(req.params.id);
 
+    // If the user doesn’t exist, return a 404 error
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -79,17 +81,27 @@ router.delete('/users/:id', admin, async (req, res) => {
       });
     }
 
-    // Delete user's investments
+    // Check if the user being deleted is the same as the admin making the request
+    if (user.id === req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You cannot delete your own account'
+      });
+    }
+
+    // Delete the user’s investments
     await Investment.deleteMany({ user: req.params.id });
 
-    // Delete user
-    await user.remove();
+    // Delete the user
+    await user.deleteOne();
 
+    // Return success response
     res.json({
       success: true,
       message: 'User and associated investments removed'
     });
   } catch (err) {
+    // Handle any server errors
     console.error(err.message);
     res.status(500).json({
       success: false,

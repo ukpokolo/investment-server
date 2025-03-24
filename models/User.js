@@ -1,4 +1,5 @@
-// models/User.js
+// models/User.js - Update your existing User model with these additional fields
+
 const mongoose = require('mongoose');
 const bcryptjs = require('bcryptjs');
 
@@ -47,6 +48,15 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ['DORMANT', 'ACTIVE'],
     default: 'DORMANT'
+  },
+  resetPasswordCode: {
+    type: String
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
   },
   createdAt: {
     type: Date,
