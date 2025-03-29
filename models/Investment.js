@@ -19,7 +19,7 @@ const investmentPlanSchema = new mongoose.Schema({
   },
   durationUnit: {
     type: String,
-    enum: ['Day', 'Days', 'Week', 'Weeks', 'Month', 'Months'],
+    enum: ['Hour', 'Hours', 'Day', 'Days', 'Week', 'Weeks', 'Month', 'Months'],
     required: true
   },
   minimumAmount: {
